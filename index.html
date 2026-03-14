@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM CRASH IMMINENT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Courier New', monospace; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #ui-layer { position: relative; z-index: 10; pointer-events: none; padding: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .hud-box { background: rgba(20, 0, 0, 0.7); border: 1px solid #ff0000; padding: 15px; display: inline-block; box-shadow: 0 0 15px rgba(255,0,0,0.4); backdrop-filter: blur(4px); }
+        .text-neon { color: #ff3333; text-shadow: 0 0 8px #ff0000; }
+        .warning-text { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer" class="flex flex-col h-screen justify-between">
+        <div class="flex justify-between items-start">
+            <div class="hud-box border-red-600">
+                <h1 class="text-2xl font-black text-neon mb-1">FATAL ERROR <span class="text-xs text-white">0x000001</span></h1>
+                <p class="text-xs text-gray-400">Volumetric Raymarching Overload</p>
+                <div class="mt-4">
+                    <p class="text-[10px] uppercase text-gray-400">Live Framerate</p>
+                    <p id="fps-counter" class="text-6xl font-black text-neon">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="hud-box w-full max-w-md mx-auto text-center border-red-600">
+            <p class="text-xs text-gray-300 mb-2">Device Status: <span id="status" class="warning-text">CRITICAL FAILURE</span></p>
+            <div class="w-full bg-red-900 text-white font-black py-4 uppercase text-sm border border-red-500 animate-pulse tracking-widest">
+                AUTORUN EXECUTED. NO ESCAPE.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const vertexShader = `void main() { gl_Position = vec4(position, 1.0); }`;
+
+        const fragmentShader = `
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            float hash(vec3 p) { p = fract(p * 0.3183099 + .1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+            float noise(vec3 x) {
+                vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y), mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+            }
+            float fbm(vec3 p) {
+                float f = 0.0;
+                f += 0.5000 * noise(p); p = p * 2.02; f += 0.2500 * noise(p); p = p * 2.03;
+                f += 0.1250 * noise(p); p = p * 2.01; f += 0.0625 * noise(p); return f;
+            }
+            void main() {
+                vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+                uv = uv * 2.0 - 1.0; uv.x *= u_resolution.x / u_resolution.y;
+                vec3 ro = vec3(0.0, 0.0, 3.0); vec3 rd = normalize(vec3(uv, -1.0));
+                float total_density = 0.0; float t = 0.0;
+
+                // Loop Raymarching yang brutal
+                for(int i = 0; i < 150; i++) {
+                    vec3 p = ro + rd * t; p += u_time * 0.5;
+                    float s = sin(u_time * 0.2); float c = cos(u_time * 0.2);
+                    p.xy *= mat2(c, -s, s, c);
+                    float density = fbm(p * 2.0);
+                    if(density > 0.4) { total_density += (density - 0.4) * 0.05; }
+                    t += 0.05;
+                    if(total_density > 1.0) break; 
+                }
+                vec3 color = mix(vec3(0.1, 0.0, 0.0), vec3(1.0, 0.1, 0.0), total_density); // Warna merah neraka
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        function startMeltdown() {
+            const container = document.getElementById('canvas-container');
+            const renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setPixelRatio(window.devicePixelRatio); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            const scene = new THREE.Scene();
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const uniforms = {
+                u_time: { value: 0.0 },
+                u_resolution: { value: new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio) }
+            };
+
+            const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+            scene.add(new THREE.Mesh(geometry, material));
+
+            let frames = 0, lastTime = performance.now();
+
+            function animate(time) {
+                requestAnimationFrame(animate);
+                uniforms.u_time.value = time * 0.001;
+                renderer.render(scene, camera);
+                frames++;
+
+                let now = performance.now();
+                if (now - lastTime >= 1000) {
+                    document.getElementById('fps-counter').innerText = frames;
+                    frames = 0; lastTime = now;
+                }
+            }
+            requestAnimationFrame(animate);
+
+            window.addEventListener('resize', () => {
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                uniforms.u_resolution.value.set(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
+            });
+        }
+
+        // TRIGGER AUTORUN: Tunggu 500ms agar UI HTML dirender dulu, baru gas siksa GPU-nya
+        window.onload = () => {
+            setTimeout(startMeltdown, 500);
+        };
+    </script>
+</body>
+</html>
