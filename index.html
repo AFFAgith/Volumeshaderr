@@ -3,83 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM CRASH IMMINENT</title>
+    <title>SILICON MELTDOWN | FLAGSHIP KILLER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Courier New', monospace; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        #ui-layer { position: relative; z-index: 10; pointer-events: none; padding: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        .hud-box { background: rgba(20, 0, 0, 0.7); border: 1px solid #ff0000; padding: 15px; display: inline-block; box-shadow: 0 0 15px rgba(255,0,0,0.4); backdrop-filter: blur(4px); }
-        .text-neon { color: #ff3333; text-shadow: 0 0 8px #ff0000; }
-        .warning-text { color: #ff0000; font-weight: bold; animation: blink 0.5s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        #ui-layer { position: relative; z-index: 10; pointer-events: none; padding: 20px; }
+        .hud-box { background: rgba(10, 0, 0, 0.85); border: 2px solid #ff0000; padding: 20px; box-shadow: 0 0 30px rgba(255,0,0,0.6); backdrop-filter: blur(5px); }
+        .glitch { color: #fff; text-shadow: 2px 0 red, -2px 0 blue; animation: glitch-anim 0.2s infinite; font-weight: black; }
+        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
+        .critical-bar { height: 10px; background: red; width: 100%; margin-top: 10px; box-shadow: 0 0 10px red; }
     </style>
 </head>
 <body>
 
     <div id="canvas-container"></div>
 
-    <div id="ui-layer" class="flex flex-col h-screen justify-between">
-        <div class="flex justify-between items-start">
-            <div class="hud-box border-red-600">
-                <h1 class="text-2xl font-black text-neon mb-1">FATAL ERROR <span class="text-xs text-white">0x000001</span></h1>
-                <p class="text-xs text-gray-400">Volumetric Raymarching Overload</p>
-                <div class="mt-4">
-                    <p class="text-[10px] uppercase text-gray-400">Live Framerate</p>
-                    <p id="fps-counter" class="text-6xl font-black text-neon">0</p>
+    <div id="ui-layer" class="flex flex-col h-screen justify-center items-center">
+        <div class="hud-box max-w-lg w-full text-center">
+            <h1 class="text-4xl mb-2 glitch uppercase">SILICON MELTDOWN</h1>
+            <p class="text-xs text-red-400 font-bold tracking-widest uppercase mb-6">Target: Flagship SoC (Snapdragon/Dimensity)</p>
+            
+            <div class="grid grid-cols-2 gap-4 text-left border-t border-b border-red-900 py-4 mb-6">
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase">Architecture</p>
+                    <p class="text-sm text-white font-bold">Mandelbulb Fractal SDF</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase">Math Iterations</p>
+                    <p class="text-sm text-red-500 font-bold animate-pulse">> 2.5 Billion / sec</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase">Precision</p>
+                    <p class="text-sm text-white font-bold">High-P 32-bit Float</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-500 uppercase">Visual FPS</p>
+                    <p id="fps-counter" class="text-3xl text-red-500 font-black glitch">0</p>
                 </div>
             </div>
-        </div>
 
-        <div class="hud-box w-full max-w-md mx-auto text-center border-red-600">
-            <p class="text-xs text-gray-300 mb-2">Device Status: <span id="status" class="warning-text">CRITICAL FAILURE</span></p>
-            <div class="w-full bg-red-900 text-white font-black py-4 uppercase text-sm border border-red-500 animate-pulse tracking-widest">
-                AUTORUN EXECUTED. NO ESCAPE.
-            </div>
+            <p class="text-xs text-gray-400 mb-2">THERMAL LIMITER OVERRIDDEN</p>
+            <div class="critical-bar"></div>
         </div>
     </div>
 
     <script>
         const vertexShader = `void main() { gl_Position = vec4(position, 1.0); }`;
 
+        // THE NIGHTMARE SHADER: Mandelbulb Fraktal + Soft Shadows (O(N^2) Complexity per pixel)
         const fragmentShader = `
+            // MEMAKSA GPU HP PAKAI 32-BIT FLOAT (SANGAT BERAT UNTUK MOBILE)
+            precision highp float; 
+            
             uniform float u_time;
             uniform vec2 u_resolution;
-            float hash(vec3 p) { p = fract(p * 0.3183099 + .1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
-            float noise(vec3 x) {
-                vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2.0 * f);
-                return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y), mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x), mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+
+            // FUNGSI MATEMATIKA FRAKTAL (MANDELBULB)
+            // Memaksa GPU menghitung sin, cos, atan, pow berulang kali
+            float mandelbulb(vec3 pos) {
+                vec3 z = pos;
+                float dr = 1.0;
+                float r = 0.0;
+                
+                // NESTED LOOP: Loop di dalam Loop adalah kelemahan utama GPU
+                for (int i = 0; i < 15; i++) { 
+                    r = length(z);
+                    if (r > 2.0) break;
+                    
+                    // Operasi Trigonometri Berat
+                    float theta = acos(z.z / r);
+                    float phi = atan(z.y, z.x);
+                    dr = pow(r, 8.0 - 1.0) * 8.0 * dr + 1.0;
+                    
+                    float zr = pow(r, 8.0);
+                    theta = theta * 8.0;
+                    phi = phi * 8.0;
+                    
+                    z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta));
+                    z += pos;
+                }
+                return 0.5 * log(r) * r / dr;
             }
-            float fbm(vec3 p) {
-                float f = 0.0;
-                f += 0.5000 * noise(p); p = p * 2.02; f += 0.2500 * noise(p); p = p * 2.03;
-                f += 0.1250 * noise(p); p = p * 2.01; f += 0.0625 * noise(p); return f;
+
+            // Normal Kalkulasi (Menggunakan 4 sampel fraktal tambahan)
+            vec3 calcNormal(vec3 p) {
+                vec2 e = vec2(1.0, -1.0) * 0.5773 * 0.0005;
+                return normalize(e.xyy * mandelbulb(p + e.xyy) + 
+                                 e.yyx * mandelbulb(p + e.yyx) + 
+                                 e.yxy * mandelbulb(p + e.yxy) + 
+                                 e.xxx * mandelbulb(p + e.xxx));
             }
+
+            // Soft Shadow Kalkulasi (Extra 50 steps per pixel terang!)
+            float softshadow(vec3 ro, vec3 rd, float mint, float tmax) {
+                float res = 1.0;
+                float t = mint;
+                for(int i = 0; i < 50; i++) {
+                    float h = mandelbulb(ro + rd * t);
+                    res = min(res, 8.0 * h / t);
+                    t += clamp(h, 0.02, 0.10);
+                    if(h < 0.001 || t > tmax) break;
+                }
+                return clamp(res, 0.0, 1.0);
+            }
+
             void main() {
                 vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-                uv = uv * 2.0 - 1.0; uv.x *= u_resolution.x / u_resolution.y;
-                vec3 ro = vec3(0.0, 0.0, 3.0); vec3 rd = normalize(vec3(uv, -1.0));
-                float total_density = 0.0; float t = 0.0;
+                uv = uv * 2.0 - 1.0;
+                uv.x *= u_resolution.x / u_resolution.y;
 
-                // Loop Raymarching yang brutal
-                for(int i = 0; i < 150; i++) {
-                    vec3 p = ro + rd * t; p += u_time * 0.5;
-                    float s = sin(u_time * 0.2); float c = cos(u_time * 0.2);
-                    p.xy *= mat2(c, -s, s, c);
-                    float density = fbm(p * 2.0);
-                    if(density > 0.4) { total_density += (density - 0.4) * 0.05; }
-                    t += 0.05;
-                    if(total_density > 1.0) break; 
+                // Kamera Berputar
+                vec3 ro = vec3(sin(u_time*0.5)*2.5, sin(u_time*0.3)*1.0, cos(u_time*0.5)*2.5);
+                vec3 ta = vec3(0.0, 0.0, 0.0);
+                vec3 ww = normalize(ta - ro);
+                vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+                vec3 vv = normalize(cross(uu, ww));
+                vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.5 * ww);
+
+                // MAIN RAYMARCHING LOOP (500 STEPS!)
+                float t = 0.0;
+                for(int i = 0; i < 500; i++) {
+                    vec3 p = ro + rd * t;
+                    float d = mandelbulb(p);
+                    if(d < 0.001 || t > 10.0) break;
+                    t += d;
                 }
-                vec3 color = mix(vec3(0.1, 0.0, 0.0), vec3(1.0, 0.1, 0.0), total_density); // Warna merah neraka
-                gl_FragColor = vec4(color, 1.0);
+
+                vec3 col = vec3(0.0); // Background hitam
+
+                // Jika cahaya mengenai objek
+                if(t < 10.0) {
+                    vec3 p = ro + rd * t;
+                    vec3 n = calcNormal(p);
+                    vec3 light = normalize(vec3(1.0, 1.0, -1.0));
+                    
+                    // Hitung bayangan (MENAMBAH BEBAN GPU 2x LIPAT)
+                    float shadow = softshadow(p, light, 0.02, 2.5);
+                    
+                    float dif = clamp(dot(n, light), 0.0, 1.0) * shadow;
+                    col = vec3(1.0, 0.2, 0.1) * dif; // Fraktal warna merah bara
+                    
+                    // Efek Fake Ambient Occlusion
+                    col += vec3(0.1, 0.0, 0.0) * clamp(0.5 + 0.5 * n.y, 0.0, 1.0);
+                }
+
+                // Vignette mematikan untuk tambah sedikit operasi
+                col *= 1.0 - 0.5 * dot(uv, uv);
+                gl_FragColor = vec4(col, 1.0);
             }
         `;
 
-        function startMeltdown() {
+        function executeMeltdown() {
             const container = document.getElementById('canvas-container');
             const renderer = new THREE.WebGLRenderer({ antialias: false });
+            
+            // SENJATA NUKLIR: Paksa render di resolusi asli layar.
+            // Di HP Flagship (seperti S24 Ultra atau ROG Phone), ini akan memaksa 
+            // GPU merender jutaan pixel di resolusi 2K atau lebih!
             renderer.setPixelRatio(window.devicePixelRatio); 
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
@@ -87,6 +169,7 @@
             const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
             const scene = new THREE.Scene();
             const geometry = new THREE.PlaneGeometry(2, 2);
+            
             const uniforms = {
                 u_time: { value: 0.0 },
                 u_resolution: { value: new THREE.Vector2(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio) }
@@ -99,27 +182,26 @@
 
             function animate(time) {
                 requestAnimationFrame(animate);
-                uniforms.u_time.value = time * 0.001;
+                uniforms.u_time.value = time * 0.0005;
                 renderer.render(scene, camera);
                 frames++;
 
                 let now = performance.now();
                 if (now - lastTime >= 1000) {
                     document.getElementById('fps-counter').innerText = frames;
+                    // Bikin HP bergetar setiap detik kalau FPS drop di bawah 30
+                    if(frames < 30 && navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
                     frames = 0; lastTime = now;
                 }
             }
             requestAnimationFrame(animate);
-
-            window.addEventListener('resize', () => {
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                uniforms.u_resolution.value.set(window.innerWidth * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio);
-            });
         }
 
-        // TRIGGER AUTORUN: Tunggu 500ms agar UI HTML dirender dulu, baru gas siksa GPU-nya
+        // TRIGGER AUTORUN SETELAH 1 DETIK
         window.onload = () => {
-            setTimeout(startMeltdown, 500);
+            setTimeout(executeMeltdown, 1000);
         };
     </script>
 </body>
